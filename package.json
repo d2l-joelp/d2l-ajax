@@ -1,0 +1,30 @@
+{
+  "name": "d2l-ajax",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "rimraf dist && mkdir dist",
+    "build:bundle": "browserify request.js -g uglifyify --s D2LRequest -o ./dist/d2l-request.js",
+    "build:release": "vulcanize --inline-scripts d2l-ajax.html > ./dist/d2l-ajax.html",
+    "build": "npm run build:bundle && npm run build:release",
+    "postinstall": "bower install",
+    "serve": "polyserve",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "superagent": "^1.8.3",
+    "superagent-d2l-session-auth": "^1.0.2"
+  },
+  "devDependencies": {
+    "bower": "^1.7.9",
+    "browserify": "^13.0.0",
+    "hydrolysis": "^1.23.3",
+    "polyserve": "^0.7.1",
+    "rimraf": "^2.5.2",
+    "uglifyify": "^3.0.1",
+    "vulcanize": "^1.14.8"
+  }
+}

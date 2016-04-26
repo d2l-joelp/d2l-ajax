@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<title>Demo</title>
+        <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+		<script>
+			window.Polymer = {
+				dom: 'shadow',
+				lazyRegister: true
+			};
+			// This is just so that superagent-d2l-session-auth doesn't think we're in an iframe.
+			// If it does, the requests won't actually get sent.
+			window.D2L = {};
+	    </script>
+        <link rel="import" href="../../polymer/polymer.html">
+		<link rel="import" href="../dist/d2l-ajax.html">
+	</head>
+	<body unresolved>
+		<main>
+			<d2l-ajax
+				auto
+				url="data.json"
+				></d2l-ajax>
+		</main>
+	</body>
+</html>

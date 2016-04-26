@@ -1,0 +1,69 @@
+<script src="dist/d2l-request.js" ></script>
+
+<dom-module id="d2l-ajax">
+    <script>
+        Polymer({
+            is: 'd2l-ajax',
+            properties: {
+                url: {
+                    type: String
+                },
+                method: {
+                    type: String,
+                    value: 'GET'
+                },
+                headers: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                contentType: {
+                    type: String,
+                    value: null
+                },
+                body: {
+                    type: Object,
+                    value: null
+                },
+                auto: {
+                    type: Boolean,
+                    value: false
+                },
+                lastResponse: {
+                    type: Object,
+                    notify: true,
+                    readOnly: true
+                },
+                lastError: {
+                    type: Object,
+                    notify: true,
+                    readOnly: true
+                }
+            },
+            observers: [
+              '_requestOptionsChanged(url, method, headers, contentType, body, auto)'
+            ],
+            generateRequest: function() {
+                var self = this;
+                D2LRequest.get(
+                    this.url,
+                    function(err) {
+                        console.error(err);
+                        self._setLastError(err);
+                    },
+                    function(res) {
+                        self._setLastResponse(res);
+                    });
+            },
+            _requestOptionsChanged: function() {
+                if (this.url == null) {
+                  return;
+                }
+                if (this.auto) {
+                  this.generateRequest();
+                }
+            }
+        });
+    </script>
+</dom-module>
