@@ -1,12 +1,41 @@
-<script src="dist/d2l-request.js" ></script>
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <dom-module id="d2l-ajax">
+    <template>
+		<iron-ajax
+			id="request"
+			url="{{url}}"
+            params="{{params}}"
+            method="{{method}}"
+            headers="[[requestHeaders]]"
+            contentType="{{contentType}}"
+            body="{{body}}"
+            handleAs="{{handleAs}}"
+            withCredentials="{{withCredentials}}"
+            timeout="{{timeout}}"
+            last-error="{{lastError}}"
+			last-response="{{lastResponse}}"
+            on-error="onError"
+            on-request="onRequest"
+            on-response="onResponse"></iron-ajax>
+    </template>
     <script>
         Polymer({
             is: 'd2l-ajax',
             properties: {
+                auto: {
+                    type: Boolean,
+                    value: false
+                },
                 url: {
                     type: String
+                },
+                params: {
+                  type: Object,
+                  value: function() {
+                    return {};
+                  }
                 },
                 method: {
                     type: String,
@@ -26,9 +55,17 @@
                     type: Object,
                     value: null
                 },
-                auto: {
-                    type: Boolean,
-                    value: false
+                handleAs: {
+                  type: String,
+                  value: 'json'
+                },
+                withCredentials: {
+                  type: Boolean,
+                  value: false
+                },
+                timeout: {
+                  type: Number,
+                  value: 0
                 },
                 lastResponse: {
                     type: Object,
@@ -39,22 +76,49 @@
                     type: Object,
                     notify: true,
                     readOnly: true
-                }
+                },
+                trustedHost: {
+                    type: String,
+                    value: null
+                },
+
+                authToken: String,
+                xsrfToken: String,
+    			requestHeaders: {
+    				type: Object,
+    				computed: 'getRequestHeaders(authToken)'
+    			}
             },
             observers: [
-              '_requestOptionsChanged(url, method, headers, contentType, body, auto)'
+                '_requestOptionsChanged(url, method, params.*, headers, contentType, ' +
+                    'body, handleAs, withCredentials, timeout, auto, trustedHost)'
             ],
+            getRequestHeaders: function(authToken) {
+                var headers = this.headers || {};
+                headers.Authorization = 'Bearer ' + authToken;
+                return headers;
+            },
             generateRequest: function() {
-                var self = this;
-                D2LRequest.get(
-                    this.url,
-                    function(err) {
-                        console.error(err);
-                        self._setLastError(err);
-                    },
-                    function(res) {
-                        self._setLastResponse(res);
-                    });
+                var url = this._parseUrl(this.url);
+
+                if (this._isRelativeUrl(url) || !this._isTrusted(url)) {
+                    this.$.request.generateRequest();
+                    return;
+                }
+
+                this._getAuthToken()
+                    .then(function(authToken) {
+                        this.$.request.generateRequest();
+                    }.bind(this));
+            },
+            onError: function(e) {
+                this.fire('error', e);
+            },
+            onRequest: function(e) {
+                this.fire('request', e);
+            },
+            onResponse: function(e) {
+                this.fire('response', e);
             },
             _requestOptionsChanged: function() {
                 if (this.url == null) {
@@ -63,6 +127,94 @@
                 if (this.auto) {
                   this.generateRequest();
                 }
+            },
+            _parseUrl: function (url) {
+                var link = document.createElement('a');
+                link.href = url;
+                return link;
+            },
+            _isRelativeUrl: function (url) {
+                return url.host === location.host
+                    && url.protocol === location.protocol;
+            },
+            _isTrusted: function (url, trustedHost) {
+                return this._isBrightspaceApi(url)
+            		|| this._isTrustedHost(url, this.trustedHost);
+            },
+            _isTrustedHost: function (url, trustedHost) {
+                return typeof trustedHost === 'string'
+            		&& url.host === trustedHost.toLowerCase();
+            },
+            _isBrightspaceApi: function (url) {
+                return url.protocol === 'https:'
+            		&& (url.hostname === 'api.brightspace.com'
+            			|| this._endsWith(url.hostname, '.api.brightspace.com')
+            		);
+            },
+            _endsWith: function (haystack, needle) {
+            	var expectedPosition = haystack.length - needle.length;
+            	var lastIndex = haystack.indexOf(needle, expectedPosition);
+            	var result = lastIndex !== -1 && lastIndex === expectedPosition;
+            	return result;
+            },
+            _getAuthToken: function() {
+                var self = this;
+
+                return new Promise(function(resolve, reject) {
+                    self._getXsrfToken()
+                        .then(function(xsrfToken) {
+                            if (self.authToken) {
+                                resolve(self.authToken);
+                            } else {
+                                var authTokenRequest = document.createElement('iron-request');
+
+                                authTokenRequest
+                                    .send({
+                                        method: 'POST',
+                                        url: '/d2l/lp/auth/oauth2/token',
+                                        withCredentials: true,
+                                        handleAs: 'json',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded',
+                                            'X-Csrf-Token': xsrfToken
+                                        },
+                                        body: "scope=*:*:*"
+                                    })
+                                    .then(function(res) {
+                                        self.authToken = res.response.access_token;
+                                        resolve(res.response.access_token);
+                                    })
+                                    .catch(function(err) {
+                                        reject(err);
+                                    });
+                            }
+                        });
+                });
+            },
+            _getXsrfToken: function() {
+                var self = this;
+
+                return new Promise(function(resolve, reject) {
+                    if (self.xsrfToken) {
+                        resolve(self.xsrfToken);
+                    } else {
+                        var xsrfRequest = document.createElement('iron-request');
+
+                        xsrfRequest
+                            .send({
+                                url: '/d2l/lp/auth/xsrf-tokens',
+                                handleAs: 'json',
+                                withCredentials: true
+                            })
+                            .then(function(res) {
+                                self.xsrfToken = res.response.referrerToken;
+                                resolve(res.response.referrerToken)
+                            })
+                            .catch(function(err) {
+                                reject(err);
+                            });
+                    }
+                });
             }
         });
     </script>
