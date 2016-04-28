@@ -119,13 +119,13 @@
                     }.bind(this));
             },
             onError: function(e) {
-                this.fire('error', e);
+                this.fire('error', e.detail);
             },
             onRequest: function(e) {
-                this.fire('request', e);
+                this.fire('request', e.detail);
             },
             onResponse: function(e) {
-                this.fire('response', e);
+                this.fire('response', e.detail);
             },
             _requestOptionsChanged: function() {
                 if (this.url == null) {
