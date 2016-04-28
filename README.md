@@ -76,7 +76,6 @@ internal sealed class Renderer : IHtmlView {
 		rc.Writer.WriteTagBegin( m_webComponentName );
 		rc.Writer.WriteAttribute( "auto", "" );
 		rc.Writer.WriteAttribute( "url", "http://my-machine-name:3000/enrollments" );
-		rc.Writer.WriteAttribute( "trusted-host", "my-machine-name:3000" );
 		rc.Writer.WriteAttribute( "headers", "{ \"Accept\": \"application/vnd.siren+json\"}" );
 		rc.Writer.WriteTagBeginRightChar();
 		rc.Writer.WriteTagEnd( m_webComponentName );
