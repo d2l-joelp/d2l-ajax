@@ -77,10 +77,6 @@
                     notify: true,
                     readOnly: true
                 },
-                trustedHost: {
-                    type: String,
-                    value: null
-                },
 
                 authToken: String,
                 xsrfToken: String,
@@ -91,17 +87,28 @@
             },
             observers: [
                 '_requestOptionsChanged(url, method, params.*, headers, contentType, ' +
-                    'body, handleAs, withCredentials, timeout, auto, trustedHost)'
+                    'body, handleAs, withCredentials, timeout, auto)'
             ],
             getRequestHeaders: function(authToken) {
-                var headers = this.headers || {};
-                headers.Authorization = 'Bearer ' + authToken;
+                var headers = {},
+                    header;
+
+                if (authToken) {
+                    headers.Authorization = 'Bearer ' + authToken;
+                }
+
+                if (this.headers instanceof Object) {
+                    for (header in this.headers) {
+                        headers[header] = this.headers[header].toString();
+                    }
+                }
+
                 return headers;
             },
             generateRequest: function() {
                 var url = this._parseUrl(this.url);
 
-                if (this._isRelativeUrl(url) || !this._isTrusted(url)) {
+                if (this._isRelativeUrl(url)) {
                     this.$.request.generateRequest();
                     return;
                 }
@@ -136,26 +143,6 @@
             _isRelativeUrl: function (url) {
                 return url.host === location.host
                     && url.protocol === location.protocol;
-            },
-            _isTrusted: function (url, trustedHost) {
-                return this._isBrightspaceApi(url)
-            		|| this._isTrustedHost(url, this.trustedHost);
-            },
-            _isTrustedHost: function (url, trustedHost) {
-                return typeof trustedHost === 'string'
-            		&& url.host === trustedHost.toLowerCase();
-            },
-            _isBrightspaceApi: function (url) {
-                return url.protocol === 'https:'
-            		&& (url.hostname === 'api.brightspace.com'
-            			|| this._endsWith(url.hostname, '.api.brightspace.com')
-            		);
-            },
-            _endsWith: function (haystack, needle) {
-            	var expectedPosition = haystack.length - needle.length;
-            	var lastIndex = haystack.indexOf(needle, expectedPosition);
-            	var result = lastIndex !== -1 && lastIndex === expectedPosition;
-            	return result;
             },
             _getAuthToken: function() {
                 var self = this;
