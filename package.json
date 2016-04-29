@@ -6,13 +6,14 @@
   "scripts": {
     "postinstall": "bower install",
     "serve": "polyserve --cors",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "wct"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
     "bower": "^1.7.9",
-    "polyserve": "PolymerLabs/polyserve#permissive-cors-option"
+    "polyserve": "PolymerLabs/polyserve#permissive-cors-option",
+    "web-component-tester": "^4.2.2"
   }
 }

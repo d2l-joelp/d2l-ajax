@@ -1,13 +1,7 @@
 {
   "name": "d2l-ajax",
   "description": "",
-  "main": "index.js",
-  "authors": [
-    "d2l-joelp <joel.poiron@d2l.com>"
-  ],
   "license": "ISC",
-  "moduleType": [],
-  "homepage": "",
   "private": true,
   "ignore": [
     "**/.*",
@@ -19,5 +13,8 @@
   "dependencies": {
     "polymer": "^1.4.0",
     "iron-ajax": "PolymerElements/iron-ajax#^1.2.0"
+  },
+  "devDependencies": {
+    "web-component-tester": "^4.2.2"
   }
 }
